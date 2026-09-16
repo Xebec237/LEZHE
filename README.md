@@ -120,6 +120,26 @@ puis la déclarer dans `src/i18n/config.ts` (l'arabe basculera automatiquement e
 
 Le frontend lit `NEXT_PUBLIC_API_URL` dans `frontend/.env.local`.
 
+## Déploiement
+
+**Frontend — Vercel** (déploiement automatique à chaque push sur `main`)
+Root Directory : `frontend`. Variable à définir : `NEXT_PUBLIC_API_URL` = l'URL publique du backend.
+Elle est compilée dans le bundle : après l'avoir changée, il faut **redéployer**.
+
+**Backend — Render** (plan `render.yaml` à la racine)
+1. render.com → *New* → *Blueprint* → connecter le dépôt → *Apply*. Le service s'appelle `lezhe`.
+2. Renseigner les variables marquées `sync: false` : `DATABASE_URL`, `DIRECT_URL` (copier depuis
+   `backend/.env`), `FRONTEND_URL` (URL Vercel, plusieurs origines séparées par des virgules),
+   et `ANTHROPIC_API_KEY` si tu veux la génération réelle. `JWT_SECRET` est généré par Render.
+3. L'image est construite depuis `backend/Dockerfile` (base Playwright : Chromium inclus pour les
+   PDF). Les migrations Prisma sont appliquées au démarrage.
+
+À savoir sur le plan gratuit Render :
+- le service s'endort après ~15 min d'inactivité ; la première requête suivante prend ~50 s ;
+- le disque est éphémère : les PDF déjà générés disparaissent à chaque redéploiement (il suffit de
+  relancer l'export). Pour les conserver, ajouter un disque persistant ou un stockage objet ;
+- sans Redis, l'export bascule automatiquement en rendu direct — c'est suffisant à ce stade.
+
 ## Reste à faire
 
 - Module paiement / Mobile Money (volontairement hors scope pour l'instant)

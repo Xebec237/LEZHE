@@ -1,0 +1,32 @@
+# Plan de déploiement Render (Blueprint).
+# Sur render.com : New → Blueprint → connecter le dépôt Xebec237/LEZHE → Apply.
+# Seules les variables marquées sync: false sont à saisir dans l'interface.
+services:
+  - type: web
+    name: lezhe
+    runtime: docker
+    plan: free
+    region: oregon # même région que la base Supabase (us-west-2) pour limiter la latence
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      # Base Supabase — copier depuis backend/.env (pooler Supavisor, mot de passe encodé)
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      # Secret de signature des jetons : généré par Render, jamais écrit dans le dépôt
+      - key: JWT_SECRET
+        generateValue: true
+      # Vide = mode dégradé (aucun appel payant). Renseigner pour la génération réelle.
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ANTHROPIC_MODEL
+        value: claude-sonnet-5
+      # Origine autorisée en CORS : l'URL du frontend Vercel
+      - key: FRONTEND_URL
+        sync: false
+      - key: NODE_ENV
+        value: production

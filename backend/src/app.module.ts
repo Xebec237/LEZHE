@@ -6,6 +6,7 @@ import { ProfileModule } from './profile/profile.module';
 import { AiGenerationModule } from './ai-generation/ai-generation.module';
 import { DocumentsModule } from './documents/documents.module';
 import { ExportModule } from './export/export.module';
+import { HealthController } from './health.controller';
 
 @Module({
   imports: [
@@ -17,5 +18,6 @@ import { ExportModule } from './export/export.module';
     DocumentsModule,
     ExportModule,
   ],
+  controllers: [HealthController],
 })
 export class AppModule {}
