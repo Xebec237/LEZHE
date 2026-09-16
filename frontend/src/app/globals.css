@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-background: #FFF9F3;
+    --color-surface: #FFFFFF;
+    --color-surface-muted: #FFE8DC;
+
+    --color-primary: #FF7A59;
+    --color-primary-hover: #E86343;
+    --color-primary-soft: #FFD9C7;
+    --color-secondary: #FFB84D;
+    --color-accent: #FFD98A;
+
+    --color-text: #2E241F;
+    --color-muted: #83726A;
+
+    --color-success: #2BB673;
+    --color-success-bg: #DDF5E7;
+    --color-info: #3AA9E0;
+    --color-info-bg: #DFF1FF;
+    --color-danger: #E2645A;
+    --color-danger-bg: #FBE7E5;
+
+    --color-border: #F3E3D6;
+    --shadow-card: 0 4px 12px rgba(46, 36, 31, 0.05), 0 1px 3px rgba(46, 36, 31, 0.08);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-text);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+.shadow-card {
+  box-shadow: var(--shadow-card);
+}
+
+.bg-surface {
+  background-color: var(--color-surface);
+}
+
+.bg-surface-muted {
+  background-color: var(--color-surface-muted);
+}
+
+.bg-brand-primary {
+  background-color: var(--color-primary);
+}
+
+.text-brand-primary {
+  color: var(--color-primary);
+}
+
+.border-brand-border {
+  border-color: var(--color-border);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #FFF9F3;
+}
+::-webkit-scrollbar-thumb {
+  background: #FFD9C7;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #FF7A59;
+}

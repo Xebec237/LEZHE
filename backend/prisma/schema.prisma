@@ -1,0 +1,234 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")   // pooler Supavisor, mode transaction (runtime)
+  directUrl = env("DIRECT_URL")     // pooler Supavisor, mode session (migrations)
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  CANDIDATE
+  ADMIN
+}
+
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+enum LanguageLevel {
+  NOTIONS
+  INTERMEDIAIRE
+  COURANT
+  BILINGUE
+  NATIF
+}
+
+enum DocumentType {
+  CV
+  COVER_LETTER
+  RECOMMENDATION_LETTER
+}
+
+enum DocumentStatus {
+  DRAFT
+  READY
+  EXPORTED
+}
+
+enum SectionSource {
+  MANUAL
+  AI_CONFIRMED
+  AI_EDITED
+}
+
+enum AiSuggestionKind {
+  SECTION_CONTENT
+  HIDDEN_SKILL
+}
+
+enum AiSuggestionStatus {
+  PENDING_CONFIRMATION
+  CONFIRMED
+  EDITED
+  REJECTED
+}
+
+enum ExportStatus {
+  QUEUED
+  PROCESSING
+  DONE
+  FAILED
+}
+
+// --- Utilisateurs ---
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  phone        String?  @unique
+  passwordHash String
+  fullName     String
+  role         UserRole @default(CANDIDATE)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  profile   CandidateProfile?
+  documents Document[]
+}
+
+// --- Profil candidat : SEULE source de vérité utilisable par l'IA ---
+model CandidateProfile {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  headline  String?
+  summary   String?
+  location  String?
+  careerGoal String? // objectifs professionnels, écrits par le candidat
+
+  experiences    Experience[]
+  educations     Education[]
+  skills         Skill[]
+  languages      Language[]
+  certifications Certification[]
+  projects       Project[]
+  achievements   Achievement[]
+  documents      Document[]
+  suggestions    AiSuggestion[]
+}
+
+model Language {
+  id        String           @id @default(uuid())
+  profileId String
+  profile   CandidateProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  name      String
+  level     LanguageLevel    @default(INTERMEDIAIRE)
+}
+
+model Certification {
+  id        String           @id @default(uuid())
+  profileId String
+  profile   CandidateProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  name      String
+  issuer    String?
+  issuedAt  DateTime?
+}
+
+model Project {
+  id          String           @id @default(uuid())
+  profileId   String
+  profile     CandidateProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  url         String?
+}
+
+// Réalisation concrète (fait brut fourni par le candidat, jamais généré)
+model Achievement {
+  id          String           @id @default(uuid())
+  profileId   String
+  profile     CandidateProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+}
+
+model Experience {
+  id          String           @id @default(uuid())
+  profileId   String
+  profile     CandidateProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  title       String
+  company     String
+  location    String?
+  startDate   DateTime
+  endDate     DateTime?
+  isCurrent   Boolean          @default(false)
+  description String?
+}
+
+model Education {
+  id        String           @id @default(uuid())
+  profileId String
+  profile   CandidateProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  school    String
+  degree    String
+  field     String?
+  startDate DateTime
+  endDate   DateTime?
+}
+
+// Une compétence confirmée
+model Skill {
+  id        String           @id @default(uuid())
+  profileId String
+  profile   CandidateProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  name      String
+  level     SkillLevel       @default(INTERMEDIATE)
+}
+
+// --- Documents ---
+model Document {
+  id         String         @id @default(uuid())
+  userId     String
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profileId  String
+  profile    CandidateProfile @relation(fields: [profileId], references: [id])
+  type       DocumentType
+  title      String
+  status     DocumentStatus @default(DRAFT)
+  templateId String         @default("ats")
+  targetJob     String?
+  targetCountry String?
+  language   String         @default("fr")
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  sections   DocumentSection[]
+  exportJobs ExportJob[]
+}
+
+// Une section = un bloc du document
+model DocumentSection {
+  id         String        @id @default(uuid())
+  documentId String
+  document   Document      @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  type       String
+  order      Int
+  content    String?       // NULL tant que non confirmé - Zero Fabrication
+  source     SectionSource @default(MANUAL)
+
+  suggestions AiSuggestion[]
+
+  @@unique([documentId, type])
+}
+
+// Une proposition IA (section ou compétence cachée)
+model AiSuggestion {
+  id                  String             @id @default(uuid())
+  sectionId           String?
+  section             DocumentSection?   @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  profileId           String?
+  profile             CandidateProfile?  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  kind                AiSuggestionKind   @default(SECTION_CONTENT)
+  generatedContent    String
+  sourceFactsSnapshot Json
+  status              AiSuggestionStatus @default(PENDING_CONFIRMATION)
+  editedContent       String?
+  createdAt           DateTime           @default(now())
+  reviewedAt          DateTime?
+}
+
+// --- Export PDF ---
+model ExportJob {
+  id           String       @id @default(uuid())
+  documentId   String
+  document     Document     @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  status       ExportStatus @default(QUEUED)
+  pdfPath      String?
+  errorMessage String?
+  createdAt    DateTime     @default(now())
+  finishedAt   DateTime?
+}

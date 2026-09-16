@@ -1,0 +1,29 @@
+# Dépendances
+node_modules/
+
+# Secrets — ne JAMAIS committer (dépôt public)
+.env
+.env.*
+!.env.example
+
+# Build
+dist/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# Données locales
+backend/.local-db/
+backend/uploads/
+
+# Divers
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+.vscode/
+.idea/
+
+# Document de cadrage interne — non publié (dépôt public)
+lezhe-prompt-claude-code_1.md
